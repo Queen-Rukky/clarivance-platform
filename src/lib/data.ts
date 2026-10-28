@@ -48,6 +48,34 @@ export async function listMembers(businessId: string): Promise<Member[]> {
   return ((data ?? []) as Member[]).filter((m) => isRole(m.role));
 }
 
+export type Invite = { id: string; email: string; role: Role; created_at: string };
+
+// Only owners and admins can see invites; everyone else gets an empty list.
+export async function listInvites(businessId: string): Promise<Invite[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("invites")
+    .select("id, email, role, created_at")
+    .eq("business_id", businessId)
+    .order("created_at", { ascending: true });
+  if (error) {
+    console.error("listInvites failed", error);
+    return [];
+  }
+  return ((data ?? []) as Invite[]).filter((i) => isRole(i.role));
+}
+
+// Turns invites sent to the user's (confirmed) email into memberships.
+export async function acceptMyInvites(): Promise<number> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("accept_my_invites");
+  if (error) {
+    console.error("accept_my_invites failed", error);
+    return 0;
+  }
+  return typeof data === "number" ? data : 0;
+}
+
 export type ActivityEntry = {
   id: number;
   action: string;
@@ -68,4 +96,71 @@ export async function listActivity(businessId: string, limit = 30): Promise<Acti
     .limit(limit);
   if (error) throw new Error(`Could not load activity: ${error.message}`);
   return (data ?? []) as ActivityEntry[];
+}
+
+export type Profile = {
+  about: string;
+  location: string;
+  contact_email: string;
+  contact_phone: string;
+  opening_hours: string;
+  tone: string;
+};
+
+export type Service = {
+  id: string;
+  name: string;
+  description: string;
+  price_type: "fixed" | "from" | "range" | "ask_owner";
+  price_min: number | null;
+  price_max: number | null;
+  currency: string;
+  status: "draft" | "approved";
+};
+
+export type Faq = { id: string; question: string; answer: string; status: "draft" | "approved" };
+
+export const EMPTY_PROFILE: Profile = {
+  about: "",
+  location: "",
+  contact_email: "",
+  contact_phone: "",
+  opening_hours: "",
+  tone: "",
+};
+
+export async function getKnowledgeBase(businessId: string): Promise<{ profile: Profile; services: Service[]; faqs: Faq[] }> {
+  const supabase = await createClient();
+  const [profile, services, faqs] = await Promise.all([
+    supabase
+      .from("business_profiles")
+      .select("about, location, contact_email, contact_phone, opening_hours, tone")
+      .eq("business_id", businessId)
+      .maybeSingle(),
+    supabase
+      .from("services")
+      .select("id, name, description, price_type, price_min, price_max, currency, status")
+      .eq("business_id", businessId)
+      .order("name"),
+    supabase
+      .from("knowledge_items")
+      .select("id, question, answer, status")
+      .eq("business_id", businessId)
+      .order("created_at"),
+  ]);
+  const error = profile.error ?? services.error ?? faqs.error;
+  if (error) {
+    console.error("getKnowledgeBase failed", error);
+    throw new Error(friendlyDbError(error, "Could not load the knowledge base."));
+  }
+  return {
+    profile: (profile.data as Profile | null) ?? EMPTY_PROFILE,
+    // numeric columns arrive as strings or numbers depending on size
+    services: ((services.data ?? []) as Service[]).map((s) => ({
+      ...s,
+      price_min: s.price_min === null ? null : Number(s.price_min),
+      price_max: s.price_max === null ? null : Number(s.price_max),
+    })),
+    faqs: (faqs.data ?? []) as Faq[],
+  };
 }

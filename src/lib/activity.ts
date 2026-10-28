@@ -24,7 +24,24 @@ export function formatActivity(entry: Entry, emailById: Map<string, string>): st
       return `${actor} changed a member's role from ${str("from")} to ${str("to")}`;
     case "member.removed":
       return `${actor} removed a ${str("role") || ""} member`.replace("  ", " ");
-    default:
+    case "member.invited":
+      return `${actor} invited someone to join as ${str("role") || "a member"}`;
+    case "member.invite_cancelled":
+      return `${actor} cancelled an invite`;
+    case "member.joined":
+      return `${actor} joined from an invite as ${str("role") || "a member"}`;
+    case "profile.created":
+    case "profile.updated":
+      return `${actor} updated the business profile`;
+    default: {
+      const kb = /^(service|knowledge)\.(created|updated|deleted|approved|unapproved)$/.exec(entry.action);
+      if (kb) {
+        const what = kb[1] === "service" ? "service" : "FAQ";
+        const verb = { created: "added", updated: "edited", deleted: "deleted", approved: "approved", unapproved: "unapproved" }[kb[2]];
+        return `${actor} ${verb} the ${what}${str("label") ? ` “${str("label")}”` : ""}`;
+      }
+      return `${actor}: ${entry.action}`;
+    }
       return `${actor}: ${entry.action}`;
   }
 }

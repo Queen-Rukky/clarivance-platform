@@ -29,7 +29,16 @@ directly. They change only through the SQL functions in the migration, which
 check roles, keep at least one owner, and log each change. The browser only
 ever holds the public Supabase key and the user's own session.
 
-`tests/db/tenant-isolation.test.ts` runs the real migration on a throwaway
+The knowledge base (business profile, services and prices, Q&A) uses the same
+rules: members can read it, only owners and admins can change it, and a trigger
+logs every change. Items start as drafts. `clarivance.approved_knowledge()`
+returns only approved items, and it is the only source the AI agent will use.
+
+Invites: adding an email with no account saves an invite. When someone signs
+in with that confirmed email, `accept_my_invites()` adds them to the business.
+No email is sent by the app yet; the owner tells the person to sign up.
+
+`tests/db/tenant-isolation.test.ts` runs the real migrations on a throwaway
 Postgres and checks these rules as the `authenticated` role.
 
 ## Setup
@@ -37,9 +46,9 @@ Postgres and checks these rules as the `authenticated` role.
 1. `npm install`
 2. Copy `.env.example` to `.env.local` and fill in the Supabase values.
 3. In Supabase:
-   - Apply `supabase/migrations/*.sql` (SQL editor or `supabase db push`).
+   - Apply `supabase/migrations/*.sql` in filename order (SQL editor or `supabase db push`).
    - **Project Settings → Data API → Exposed schemas**: add `clarivance`.
-   - **Authentication → URL Configuration**: add `<APP_URL>/auth/confirm` to Redirect URLs.
+   - **Authentication → URL Configuration**: add `<APP_URL>/**` to Redirect URLs (used by sign-up confirmation and password reset).
 4. `npm run dev`
 
 ## Scripts

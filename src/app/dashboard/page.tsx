@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ActionForm } from "@/components/action-form";
 import { AppHeader } from "@/components/app-header";
 import { requireUser } from "@/lib/auth";
-import { listMyBusinesses, type BusinessSummary } from "@/lib/data";
+import { acceptMyInvites, listMyBusinesses, type BusinessSummary } from "@/lib/data";
 import { createBusiness } from "./actions";
 
 export const metadata = { title: "Dashboard · Clarivance" };
@@ -11,6 +11,7 @@ export default async function DashboardPage() {
   const user = await requireUser();
   let businesses: BusinessSummary[] = [];
   let loadError: string | null = null;
+  const joined = await acceptMyInvites();
   try {
     businesses = await listMyBusinesses(user.id);
   } catch (err) {
@@ -23,6 +24,11 @@ export default async function DashboardPage() {
       <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 py-6">
         <section className="flex flex-col gap-3">
           <h1 className="text-xl font-semibold">Your businesses</h1>
+          {joined > 0 && (
+            <p role="status" className="notice notice-ok">
+              You&apos;ve been added to {joined === 1 ? "a business" : `${joined} businesses`} you were invited to.
+            </p>
+          )}
           {loadError && <p role="alert" className="notice notice-error">{loadError}</p>}
           {loadError ? null : businesses.length === 0 ? (
             <p className="text-muted">You&apos;re not part of a business yet. Create one below, or ask an owner to add you.</p>

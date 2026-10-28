@@ -9,7 +9,6 @@ const KNOWN_MESSAGES = [
   "only an owner can change owner roles",
   "only an owner can remove an owner",
   "a business must keep at least one owner",
-  "no account with that email; ask them to sign up first",
   "already a member",
   "not a member",
 ];

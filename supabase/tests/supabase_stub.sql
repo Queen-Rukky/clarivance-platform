@@ -35,3 +35,18 @@ as $$
 $$;
 
 grant execute on function auth.uid() to anon, authenticated, service_role;
+
+alter table auth.users add column if not exists email_confirmed_at timestamptz default now();
+
+create or replace function auth.role()
+returns text
+language sql
+stable
+as $$
+  select coalesce(
+    nullif(current_setting('request.jwt.claim.role', true), ''),
+    (nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'role')
+  )
+$$;
+
+grant execute on function auth.role() to anon, authenticated, service_role;

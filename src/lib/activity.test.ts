@@ -22,3 +22,20 @@ describe("formatActivity", () => {
     );
   });
 });
+
+describe("formatActivity for the knowledge base", () => {
+  it("describes approvals with the item's label", () => {
+    expect(
+      formatActivity({ action: "service.approved", actor_user_id: "u1", actor_agent: null, details: { label: "Audit" } }, emails),
+    ).toBe("bisi@example.com approved the service “Audit”");
+    expect(formatActivity({ action: "knowledge.deleted", actor_user_id: "u1", actor_agent: null, details: {} }, emails)).toBe(
+      "bisi@example.com deleted the FAQ",
+    );
+  });
+
+  it("describes invites", () => {
+    expect(formatActivity({ action: "member.invited", actor_user_id: "u1", actor_agent: null, details: { role: "staff" } }, emails)).toBe(
+      "bisi@example.com invited someone to join as staff",
+    );
+  });
+});

@@ -3,10 +3,10 @@ import { notFound } from "next/navigation";
 import { ActionForm } from "@/components/action-form";
 import { AppHeader } from "@/components/app-header";
 import { requireUser } from "@/lib/auth";
-import { getBusiness, listActivity, listMembers } from "@/lib/data";
+import { getBusiness, listActivity, listInvites, listMembers } from "@/lib/data";
 import { formatActivity } from "@/lib/activity";
 import { assignableRoles, canEditBusiness, canManageMembers } from "@/lib/roles";
-import { addMember, changeRole, removeMember, renameBusiness } from "./actions";
+import { addMember, cancelInvite, changeRole, removeMember, renameBusiness } from "./actions";
 
 export default async function BusinessPage({ params }: PageProps<"/b/[businessId]">) {
   const { businessId } = await params;
@@ -16,9 +16,13 @@ export default async function BusinessPage({ params }: PageProps<"/b/[businessId
   const business = await getBusiness(businessId, user.id);
   if (!business) notFound();
 
-  const [members, activity] = await Promise.all([listMembers(businessId), listActivity(businessId)]);
-  const emailById = new Map(members.map((m) => [m.user_id, m.email]));
   const manage = canManageMembers(business.myRole);
+  const [members, activity, invites] = await Promise.all([
+    listMembers(businessId),
+    listActivity(businessId),
+    manage ? listInvites(businessId) : Promise.resolve([]),
+  ]);
+  const emailById = new Map(members.map((m) => [m.user_id, m.email]));
   const roles = assignableRoles(business.myRole);
 
   return (
@@ -30,6 +34,14 @@ export default async function BusinessPage({ params }: PageProps<"/b/[businessId
           <h1 className="text-xl font-semibold break-words">{business.name}</h1>
           <p className="text-sm text-muted">Your role: {business.myRole ?? "none"}</p>
         </div>
+
+        <Link href={`/b/${business.id}/knowledge`} className="card flex items-center justify-between gap-3">
+          <span>
+            <span className="block font-semibold">Knowledge base</span>
+            <span className="block text-sm text-muted">The approved facts, services and prices your AI agent may use.</span>
+          </span>
+          <span aria-hidden>→</span>
+        </Link>
 
         {canEditBusiness(business.myRole) && (
           <section className="card flex flex-col gap-3">
@@ -72,10 +84,29 @@ export default async function BusinessPage({ params }: PageProps<"/b/[businessId
             ))}
           </ul>
 
+          {manage && invites.length > 0 && (
+            <ul className="flex flex-col gap-2">
+              {invites.map((i) => (
+                <li key={i.id} className="card flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">{i.email}</p>
+                    <p className="text-sm text-muted">Invited as {i.role} · waiting for them to sign up</p>
+                  </div>
+                  <ActionForm action={cancelInvite} submitLabel="Cancel invite" pendingLabel="Cancelling…" buttonClassName="btn btn-ghost" className="flex items-center gap-2">
+                    <input type="hidden" name="businessId" value={business.id} />
+                    <input type="hidden" name="inviteId" value={i.id} />
+                  </ActionForm>
+                </li>
+              ))}
+            </ul>
+          )}
+
           {manage && (
             <div className="card flex flex-col gap-3">
               <h3 className="font-semibold">Add a team member</h3>
-              <p className="text-sm text-muted">They need to create a Clarivance account first.</p>
+              <p className="text-sm text-muted">
+                If they don&apos;t have an account yet, we&apos;ll save an invite. They join as soon as they sign up with that email.
+              </p>
               <ActionForm action={addMember} submitLabel="Add member" pendingLabel="Adding…">
                 <input type="hidden" name="businessId" value={business.id} />
                 <label className="field">
