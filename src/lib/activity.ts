@@ -6,6 +6,17 @@ type Entry = {
   details: Record<string, unknown> | null;
 };
 
+const STAGES: Record<string, string> = {
+  new: "New",
+  qualified: "Qualified",
+  contacted: "Contacted",
+  replied: "Replied",
+  meeting_booked: "Meeting booked",
+  won: "Won",
+  lost: "Lost",
+};
+const stage = (s: string) => STAGES[s] ?? s;
+
 export function formatActivity(entry: Entry, emailById: Map<string, string>): string {
   const actor = entry.actor_agent
     ? `AI agent (${entry.actor_agent})`
@@ -30,6 +41,20 @@ export function formatActivity(entry: Entry, emailById: Map<string, string>): st
       return `${actor} cancelled an invite`;
     case "member.joined":
       return `${actor} joined from an invite as ${str("role") || "a member"}`;
+    case "lead.created":
+      return `${actor} added the lead${str("label") ? ` “${str("label")}”` : ""}`;
+    case "lead.status_changed":
+      return `${actor} moved${str("label") ? ` “${str("label")}”` : " a lead"} to ${stage(str("to"))}`;
+    case "lead.deleted":
+      return `${actor} deleted the lead${str("label") ? ` “${str("label")}”` : ""}`;
+    case "draft.created":
+      return `${actor} created a ${str("channel") || "message"} draft`;
+    case "draft.approved":
+      return `${actor} approved a ${str("channel") || "message"} draft`;
+    case "sample.loaded":
+      return `${actor} loaded sample leads`;
+    case "sample.removed":
+      return `${actor} removed the sample leads`;
     case "profile.created":
     case "profile.updated":
       return `${actor} updated the business profile`;

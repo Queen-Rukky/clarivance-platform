@@ -41,6 +41,17 @@ No email is sent by the app yet; the owner tells the person to sign up.
 `tests/db/tenant-isolation.test.ts` runs the real migrations on a throwaway
 Postgres and checks these rules as the `authenticated` role.
 
+## Leads and plans
+
+Leads move through New, Qualified, Contacted, Replied, Meeting booked, Won
+and Lost. Every stage change is stored in `lead_stage_history`, which the
+overview uses for conversion rates. Each plan has a lead limit enforced by a
+trigger (`plan_lead_limit()`); only the server can change a business's plan.
+Sample leads are fictional, flagged `is_sample`, excluded from limits and real
+analytics, and removable in one step. Outreach drafts are built from a
+template (`templateDraft`) until an AI key is configured; Clarivance never
+sends messages.
+
 ## Setup
 
 1. `npm install`
@@ -62,7 +73,7 @@ Postgres and checks these rules as the `authenticated` role.
 
 ## Environment variables
 
-See `.env.example`. Only `NEXT_PUBLIC_*` values reach the browser. Everything
+See `.env.example`. Optional: `CONTACT_EMAIL` shows a Contact link in the site footer. Only `NEXT_PUBLIC_*` values reach the browser. Everything
 else is set in the hosting dashboard and never committed.
 
 ## Shared Supabase project

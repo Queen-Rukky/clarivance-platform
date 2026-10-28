@@ -12,8 +12,8 @@ const SUBMIT_LABEL: Record<Mode, string> = {
   reset: "Send reset link",
 };
 
-export function LoginForm({ next }: { next: string }) {
-  const [mode, setMode] = useState<Mode>("signin");
+export function LoginForm({ next, initialMode = "signin" }: { next: string; initialMode?: Mode }) {
+  const [mode, setMode] = useState<Mode>(initialMode);
   const [signInState, signInAction, signingIn] = useActionState<ActionState, FormData>(signIn, {});
   const [signUpState, signUpAction, signingUp] = useActionState<ActionState, FormData>(signUp, {});
   const [resetState, resetAction, resetting] = useActionState<ActionState, FormData>(requestPasswordReset, {});

@@ -20,7 +20,7 @@ function field(formData: FormData, name: string) {
 const idsSchema = z.object({ businessId: z.uuid(), id: z.uuid() });
 
 function done(businessId: string, ok: string): ActionState {
-  revalidatePath(`/b/${businessId}/knowledge`);
+  revalidatePath(`/b/${businessId}`, "layout");
   return { ok };
 }
 

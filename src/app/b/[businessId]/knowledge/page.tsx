@@ -1,7 +1,5 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ActionForm } from "@/components/action-form";
-import { AppHeader } from "@/components/app-header";
 import { requireUser } from "@/lib/auth";
 import { getBusiness, getKnowledgeBase, type Faq, type Service } from "@/lib/data";
 import { formatPrice } from "@/lib/pricing";
@@ -136,16 +134,13 @@ export default async function KnowledgePage({ params }: PageProps<"/b/[businessI
 
   return (
     <>
-      <AppHeader email={user.email} />
-      <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 py-6">
         <div className="flex flex-col gap-1">
-          <Link href={`/b/${business.id}`} className="text-sm text-muted">← {business.name}</Link>
-          <h1 className="text-xl font-semibold">Knowledge base</h1>
+          <h1 className="page-title">Knowledge base</h1>
           <p className="text-sm text-muted">
             Your AI agent will only use what you approve here. If a customer asks something that isn&apos;t covered, it will
             say it needs to check with you instead of guessing. {approvedCount} approved item{approvedCount === 1 ? "" : "s"} so far.
           </p>
-          {!edit && <p className="notice">Only owners and admins can change the knowledge base.</p>}
+          {!edit && <p className="notice notice-info">Only owners and admins can change the knowledge base.</p>}
         </div>
 
         <section className="card flex flex-col gap-3">
@@ -267,7 +262,6 @@ export default async function KnowledgePage({ params }: PageProps<"/b/[businessI
             </div>
           )}
         </section>
-      </main>
     </>
   );
 }

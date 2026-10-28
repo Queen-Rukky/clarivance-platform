@@ -16,5 +16,5 @@ export async function createBusiness(_prev: ActionState, formData: FormData): Pr
   const { data, error } = await supabase.rpc("create_business", { p_name: parsed.data });
   if (error || !data) return { error: friendlyDbError(error, "Could not create the business.") };
 
-  redirect(`/b/${data}`);
+  redirect(`/b/${data}/setup?step=1`);
 }

@@ -11,8 +11,8 @@ describe("formatActivity", () => {
   });
 
   it("labels AI agent actions", () => {
-    expect(formatActivity({ action: "draft.created", actor_user_id: null, actor_agent: "customer_service", details: {} }, emails)).toBe(
-      "AI agent (customer_service): draft.created",
+    expect(formatActivity({ action: "reply.sent", actor_user_id: null, actor_agent: "customer_service", details: {} }, emails)).toBe(
+      "AI agent (customer_service): reply.sent",
     );
   });
 
@@ -37,5 +37,13 @@ describe("formatActivity for the knowledge base", () => {
     expect(formatActivity({ action: "member.invited", actor_user_id: "u1", actor_agent: null, details: { role: "staff" } }, emails)).toBe(
       "bisi@example.com invited someone to join as staff",
     );
+  });
+});
+
+describe("formatActivity for leads", () => {
+  it("describes stage changes in words", () => {
+    expect(
+      formatActivity({ action: "lead.status_changed", actor_user_id: "u1", actor_agent: null, details: { label: "Acme", to: "meeting_booked" } }, emails),
+    ).toBe("bisi@example.com moved “Acme” to Meeting booked");
   });
 });

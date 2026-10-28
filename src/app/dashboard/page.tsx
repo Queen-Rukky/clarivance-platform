@@ -7,7 +7,8 @@ import { createBusiness } from "./actions";
 
 export const metadata = { title: "Dashboard · Clarivance" };
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: PageProps<"/dashboard">) {
+  const sp = await searchParams;
   const user = await requireUser();
   let businesses: BusinessSummary[] = [];
   let loadError: string | null = null;
@@ -23,12 +24,13 @@ export default async function DashboardPage() {
       <AppHeader email={user.email} />
       <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 py-6">
         <section className="flex flex-col gap-3">
-          <h1 className="text-xl font-semibold">Your businesses</h1>
+          <h1 className="page-title">Your businesses</h1>
           {joined > 0 && (
             <p role="status" className="notice notice-ok">
               You&apos;ve been added to {joined === 1 ? "a business" : `${joined} businesses`} you were invited to.
             </p>
           )}
+          {sp.deleted === "1" && <p role="status" className="notice notice-ok">The business and all its data were deleted.</p>}
           {loadError && <p role="alert" className="notice notice-error">{loadError}</p>}
           {loadError ? null : businesses.length === 0 ? (
             <p className="text-muted">You&apos;re not part of a business yet. Create one below, or ask an owner to add you.</p>

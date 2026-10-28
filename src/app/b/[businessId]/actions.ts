@@ -34,7 +34,7 @@ export async function renameBusiness(_prev: ActionState, formData: FormData): Pr
     p_entity_id: businessId.data,
     p_details: { name: name.data },
   });
-  revalidatePath(`/b/${businessId.data}`);
+  revalidatePath(`/b/${businessId.data}`, "layout");
   return { ok: "Saved." };
 }
 
@@ -55,7 +55,7 @@ export async function addMember(_prev: ActionState, formData: FormData): Promise
   });
   if (error) return { error: friendlyDbError(error, "Could not add that member.") };
 
-  revalidatePath(`/b/${parsed.data.businessId}`);
+  revalidatePath(`/b/${parsed.data.businessId}`, "layout");
   if (data === "invited") {
     return {
       ok: `Invite saved. Ask ${parsed.data.email} to create a Clarivance account with that email; they'll join automatically.`,
@@ -74,7 +74,7 @@ export async function cancelInvite(_prev: ActionState, formData: FormData): Prom
   const { error } = await supabase.rpc("cancel_invite", { p_invite: inviteId.data });
   if (error) return { error: friendlyDbError(error, "Could not cancel that invite.") };
 
-  revalidatePath(`/b/${businessId.data}`);
+  revalidatePath(`/b/${businessId.data}`, "layout");
   return { ok: "Invite cancelled." };
 }
 
@@ -95,7 +95,7 @@ export async function changeRole(_prev: ActionState, formData: FormData): Promis
   });
   if (error) return { error: friendlyDbError(error, "Could not change that role.") };
 
-  revalidatePath(`/b/${parsed.data.businessId}`);
+  revalidatePath(`/b/${parsed.data.businessId}`, "layout");
   return { ok: "Role updated." };
 }
 
@@ -116,6 +116,6 @@ export async function removeMember(_prev: ActionState, formData: FormData): Prom
   if (error) return { error: friendlyDbError(error, "Could not remove that member.") };
 
   if (parsed.data.userId === user.id) redirect("/dashboard");
-  revalidatePath(`/b/${parsed.data.businessId}`);
+  revalidatePath(`/b/${parsed.data.businessId}`, "layout");
   return { ok: "Member removed." };
 }
