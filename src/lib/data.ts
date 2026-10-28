@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { friendlyDbError } from "@/lib/errors";
 import { isRole, type Role } from "@/lib/roles";
 
 // All reads go through the signed-in user's client, so RLS decides what
@@ -14,7 +15,10 @@ export async function listMyBusinesses(userId: string): Promise<BusinessSummary[
     .select("role, businesses ( id, name )")
     .eq("user_id", userId)
     .order("created_at", { ascending: true });
-  if (error) throw new Error(`Could not load businesses: ${error.message}`);
+  if (error) {
+    console.error("listMyBusinesses failed", error);
+    throw new Error(friendlyDbError(error, "Could not load your businesses."));
+  }
 
   return (data ?? []).flatMap((row) => {
     const biz = Array.isArray(row.businesses) ? row.businesses[0] : row.businesses;
