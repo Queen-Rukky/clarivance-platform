@@ -1,26 +1,89 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --background: #f7f8fa;
+  --surface: #ffffff;
+  --foreground: #14212b;
+  --muted: #5a6b76;
+  --line: #d9e1e5;
+  --accent: #0b6e75;
+  --accent-ink: #ffffff;
+  --danger: #b42318;
+  --ok: #1d7a3f;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #0f171c;
+    --surface: #16222a;
+    --foreground: #e4ecef;
+    --muted: #9aabb4;
+    --line: #2a3943;
+    --accent: #4fc1c4;
+    --accent-ink: #0f171c;
+    --danger: #f97066;
+    --ok: #5fcf88;
   }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+@layer components {
+  .card {
+    @apply rounded-xl border border-line bg-surface p-4;
+  }
+  .field {
+    @apply flex flex-col gap-1 text-sm font-medium;
+  }
+  .field input,
+  .select {
+    @apply min-h-11 w-full rounded-lg border border-line bg-surface px-3 text-base font-normal text-foreground;
+  }
+  .btn {
+    @apply inline-flex min-h-11 items-center justify-center rounded-lg px-4 text-sm font-semibold disabled:opacity-60;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: var(--accent-ink);
+  }
+  .btn-ghost {
+    @apply border border-line bg-surface;
+  }
+  .btn-danger {
+    @apply border border-line bg-surface;
+    color: var(--danger);
+  }
+  .pill {
+    @apply rounded-full border border-line px-2 py-0.5 text-xs text-muted;
+  }
+  .eyebrow {
+    @apply text-xs font-semibold uppercase tracking-widest;
+    color: var(--accent);
+  }
+  .notice {
+    @apply rounded-lg border px-3 py-2 text-sm;
+  }
+  .notice-error {
+    color: var(--danger);
+    border-color: var(--danger);
+  }
+  .notice-ok {
+    color: var(--ok);
+    border-color: var(--ok);
+  }
 }

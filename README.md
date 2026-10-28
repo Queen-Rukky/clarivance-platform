@@ -1,36 +1,65 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Clarivance platform
 
-## Getting Started
+A mobile-first dashboard for running a business with AI agents. Clarivance is
+the first business using it. Phase 1 is the **Lead Agent**: answer enquiries
+from approved business information, qualify leads, draft quotes for owner
+approval, and follow up.
 
-First, run the development server:
+The full plan is in the project's "Clarivance Lead Agent: Phase 1 build plan" doc.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Status
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+| Workflow | State |
+| --- | --- |
+| 1. Foundation: login, businesses, team roles, tenant isolation, activity log | Built, tested locally |
+| 2–9 | Not started |
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Stack
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Next.js 16 (App Router, server actions), TypeScript, Tailwind CSS 4
+- Supabase Auth and Postgres, in its own `clarivance` schema
+- Vitest for unit tests and database (RLS) tests
 
-## Learn More
+## How tenant isolation works
 
-To learn more about Next.js, take a look at the following resources:
+Every business-owned table carries `business_id`. Row-level security policies
+allow access only when `clarivance.has_business_role(business_id, roles)` is
+true for the signed-in user. Memberships and the activity log can't be written
+directly. They change only through the SQL functions in the migration, which
+check roles, keep at least one owner, and log each change. The browser only
+ever holds the public Supabase key and the user's own session.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+`tests/db/tenant-isolation.test.ts` runs the real migration on a throwaway
+Postgres and checks these rules as the `authenticated` role.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Setup
 
-## Deploy on Vercel
+1. `npm install`
+2. Copy `.env.example` to `.env.local` and fill in the Supabase values.
+3. In Supabase:
+   - Apply `supabase/migrations/*.sql` (SQL editor or `supabase db push`).
+   - **Project Settings → Data API → Exposed schemas**: add `clarivance`.
+   - **Authentication → URL Configuration**: add `<APP_URL>/auth/confirm` to Redirect URLs.
+4. `npm run dev`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Scripts
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Local dev server |
+| `npm test` | Unit tests, plus DB tests when `TEST_DATABASE_URL` is set |
+| `npm run lint` / `npm run typecheck` | ESLint / TypeScript |
+| `npm run build` | Production build |
+
+## Environment variables
+
+See `.env.example`. Only `NEXT_PUBLIC_*` values reach the browser. Everything
+else is set in the hosting dashboard and never committed.
+
+## Shared Supabase project
+
+This app shares the `parishconnect` Supabase project but keeps all its tables
+in the `clarivance` schema. Things that are shared: the `auth.users` list (the
+ParishConnect sign-up trigger also creates an empty `public.profiles` row for
+Clarivance users, which grants no ParishConnect access), auth email templates,
+and free-tier limits.
