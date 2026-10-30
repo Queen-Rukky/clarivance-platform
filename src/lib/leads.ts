@@ -273,7 +273,8 @@ function firstName(name: string) {
 }
 
 // Builds a plain draft from facts already on the record. It never adds facts:
-// anything missing is listed in `gaps` and left as a [bracketed] prompt.
+// anything missing is listed in `gaps` and left as a [bracketed] prompt. The
+// wording follows the writing rules in outreach-rules.ts.
 export function templateDraft(ctx: DraftContext, channel: "email" | "social" | "whatsapp"): Draft {
   const gaps: string[] = [];
   const name = firstName(ctx.lead.contact_name);
@@ -284,7 +285,8 @@ export function templateDraft(ctx: DraftContext, channel: "email" | "social" | "
   if (ctx.lead.enquiry) {
     reason = `Thanks for getting in touch about this: "${ctx.lead.enquiry.slice(0, 200)}".`;
   } else if (ctx.lead.company && ctx.lead.industry) {
-    reason = `I'm reaching out because we work with ${ctx.lead.industry.toLowerCase()} businesses like ${ctx.lead.company}.`;
+    const where = ctx.lead.location ? ` in ${ctx.lead.location}` : "";
+    reason = `${ctx.lead.company} came up while I was looking at ${ctx.lead.industry.toLowerCase()} businesses${where}.`;
   } else {
     gaps.push("a specific reason for contacting them");
     reason = "[Add a specific, factual reason you're contacting them.]";
@@ -301,15 +303,16 @@ export function templateDraft(ctx: DraftContext, channel: "email" | "social" | "
   const cta =
     ctx.lead.status === "meeting_booked"
       ? "Is there anything you'd like me to prepare before we meet?"
-      : "Would you be open to a 15-minute call this week?";
+      : "Would a 15-minute call this week be useful?";
 
   const sign = ctx.senderName ? `\n\n${ctx.senderName}\n${ctx.businessName}` : `\n\n${ctx.businessName}`;
   const body =
     channel === "email"
       ? `${greeting}\n\n${reason}\n\n${value}\n\n${cta}${sign}`
       : `${greeting} ${reason} ${value} ${cta}`;
+  // Short, lowercase-led and without the person's name (see outreach-rules.ts).
   const subject =
-    channel === "email" ? (ctx.lead.company ? `${ctx.businessName} × ${ctx.lead.company}` : `Following up from ${ctx.businessName}`) : "";
+    channel !== "email" ? "" : ctx.lead.enquiry ? "your enquiry" : ctx.lead.company ? `idea for ${ctx.lead.company}` : "a thought";
   return { subject, body, gaps };
 }
 

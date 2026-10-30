@@ -7,6 +7,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { getBusiness, getLead, getProfile } from "@/lib/data";
 import { friendlyDbError, type ActionState } from "@/lib/errors";
 import { LEAD_STATUSES, leadSchema, newLeadSchema, templateDraft } from "@/lib/leads";
+import { checkDraft } from "@/lib/outreach-rules";
 import { createClient } from "@/lib/supabase/server";
 import { firstIssue } from "@/lib/validation";
 
@@ -160,6 +161,7 @@ export async function saveDraft(_prev: ActionState, formData: FormData): Promise
     leadId: formData.get("leadId"),
     draftId: formData.get("draftId"),
   });
+  const channel = z.enum(CHANNELS).safeParse(formData.get("channel"));
   const fields = z
     .object({
       subject: z.string().trim().max(200, "Subject is too long."),
@@ -167,7 +169,7 @@ export async function saveDraft(_prev: ActionState, formData: FormData): Promise
       approve: z.boolean(),
     })
     .safeParse({ subject: formData.get("subject") ?? "", body: formData.get("body") ?? "", approve: formData.get("intent") === "approve" });
-  if (!p.success) return { error: "Invalid request." };
+  if (!p.success || !channel.success) return { error: "Invalid request." };
   if (!fields.success) return { error: firstIssue(fields.error) };
   if (fields.data.approve && /\[[^\]]+\]/.test(fields.data.body)) {
     return { error: "Fill in or remove the [bracketed] parts before approving." };
@@ -188,8 +190,10 @@ export async function saveDraft(_prev: ActionState, formData: FormData): Promise
   if (!data?.length) return { error: "You don't have permission to do that." };
 
   revalidatePath(`/b/${p.data.businessId}/leads/${p.data.leadId}`);
+  const issues = checkDraft(fields.data, channel.data).length;
+  const note = issues ? ` The writing check has ${issues} suggestion${issues > 1 ? "s" : ""} below.` : "";
   return {
-    ok: fields.data.approve ? "Approved. Copy it and send it from your own email or app." : "Draft saved.",
+    ok: fields.data.approve ? `Approved. Copy it and send it from your own email or app.${note}` : `Draft saved.${note}`,
   };
 }
 

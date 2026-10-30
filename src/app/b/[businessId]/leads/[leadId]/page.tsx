@@ -5,6 +5,7 @@ import { CopyButton } from "@/components/copy-button";
 import { requireUser } from "@/lib/auth";
 import { getBusiness, getLead, listDrafts, listDuplicates, listLeadHistory, listMembers } from "@/lib/data";
 import { leadTitle, SOURCE_LABELS, STATUS_LABELS } from "@/lib/leads";
+import { checkDraft } from "@/lib/outreach-rules";
 import { canEditBusiness } from "@/lib/roles";
 import { deleteDraft, deleteLead, generateDraft, saveDraft, updateLead } from "../actions";
 import { LeadFields } from "../lead-fields";
@@ -113,7 +114,8 @@ export default async function LeadPage({ params, searchParams }: PageProps<"/b/[
           <h2 id="outreach" className="font-semibold">Outreach drafts</h2>
           <p className="text-sm text-muted">
             Drafts are built only from what&apos;s on this record and your Setup answers; missing facts are left as [brackets] for
-            you to fill. AI-written drafts switch on when the AI service is connected. Clarivance never sends messages: approve a
+            you to fill. Each saved draft gets a writing check for things that make messages sound like spam or AI. AI-written
+            drafts switch on when the AI service is connected. Clarivance never sends messages: approve a
             draft, then copy it into your own email or app.
           </p>
         </div>
@@ -130,7 +132,9 @@ export default async function LeadPage({ params, searchParams }: PageProps<"/b/[
           <p className="text-sm text-muted">No drafts yet.</p>
         ) : (
           <ul className="flex flex-col gap-4">
-            {drafts.map((d) => (
+            {drafts.map((d) => {
+              const issues = checkDraft(d, d.channel);
+              return (
               <li key={d.id} className="rounded-xl border border-line p-4">
                 <div className="mb-3 flex flex-wrap items-center gap-2 text-sm">
                   <span className="font-medium">{CHANNEL_LABELS[d.channel]}</span>
@@ -151,15 +155,29 @@ export default async function LeadPage({ params, searchParams }: PageProps<"/b/[
                 >
                   {hidden}
                   <input type="hidden" name="draftId" value={d.id} />
+                  <input type="hidden" name="channel" value={d.channel} />
                   {d.channel === "email" && <label className="field"><span>Subject</span><input name="subject" maxLength={200} defaultValue={d.subject} /></label>}
                   <label className="field"><span>Message</span><textarea name="body" rows={d.channel === "email" ? 10 : 5} maxLength={5000} defaultValue={d.body} /></label>
                 </ActionForm>
+                <div className="mt-3 text-sm" aria-label="Writing check">
+                  {issues.length === 0 ? (
+                    <p className="text-muted">Writing check: reads like a person wrote it.</p>
+                  ) : (
+                    <>
+                      <p className="font-medium">Writing check (saved version)</p>
+                      <ul className="mt-1 list-disc pl-5 text-muted">
+                        {issues.map((i) => <li key={i.rule}>{i.message}</li>)}
+                      </ul>
+                    </>
+                  )}
+                </div>
                 <ActionForm action={deleteDraft} submitLabel="Delete draft" pendingLabel="Deleting…" buttonClassName="mt-2 text-sm text-muted underline underline-offset-4" confirmMessage="Delete this draft?" className="flex flex-col gap-2">
                   {hidden}
                   <input type="hidden" name="draftId" value={d.id} />
                 </ActionForm>
               </li>
-            ))}
+              );
+            })}
           </ul>
         )}
       </section>
